@@ -1,0 +1,22 @@
+---
+- name: Download Drupal Coding Standards
+  command: composer global require drupal/coder:\>7 creates={{ dcs_comp_user_dir }}/vendor/drupal/coder
+  tags:
+    - drupal-coding-standards
+
+# Link Drupal CoderSniffer standards with Squizlabs CodeSniffer standards folder.
+# You do this in order to make Drupal standards available to the phpcs command.
+- name: Add Drupal Standards to Code Sniffer
+  command: ln -s {{ dcs_comp_user_dir }}/vendor/drupal/coder/coder_sniffer/Drupal {{ dcs_comp_user_dir }}/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/Drupal creates={{ dcs_comp_user_dir }}/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/Drupal
+  tags:
+    - drupal-coding-standards
+
+- name: Download Drupal Security Standards
+  command: git clone --branch master http://git.drupal.org/sandbox/coltrane/1921926.git drupalsecure_code_sniffs creates={{ dcs_comp_user_dir }}/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/DrupalSecure chdir={{ dcs_temp_dir }}
+  tags:
+    - drupal-coding-standards
+
+- name: Add Drupal Security Standards to Code Sniffer
+  command: cp -r {{ dcs_temp_dir }}/drupalsecure_code_sniffs/DrupalSecure {{ dcs_comp_user_dir }}/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/DrupalSecure creates={{ dcs_comp_user_dir }}/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/DrupalSecure
+  tags:
+    - drupal-coding-standards
