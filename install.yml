@@ -6,6 +6,7 @@
     brew_taps:
     - caskroom/fonts
     brew_packages:
+    - p7zip
     - git
     - zsh
     - vim
@@ -13,7 +14,19 @@
     - ctags
     - reattach-to-user-namespace
     - tmux
+    - mysql
+    - watch
+    - wget
     cask_packages:
     - font-inconsolata-for-powerline
     - iterm2
     - macvim
+    - firefox
+    - google-chrome
+    - google-hangouts
+    - phpstorm
+    - mysqlworkbench
+    - sublime-text
+    - vagrant
+    - virtualbox
+    - textmate
