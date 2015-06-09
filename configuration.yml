@@ -7,6 +7,8 @@
     lineinfile: dest=/etc/hosts line="127.0.0.1 atla.local"
   - name: Set atla.dev in hosts
     lineinfile: dest=/etc/hosts line="10.33.36.10 atla.dev"
+  - name: Enable vhosts in Apache
+    replace: dest=/etc/apache2/httpd.conf regexp='^.*httpd-vhosts.conf.*$' replace='Include /private/etc/apache2/extra/httpd-vhosts.conf'
 
 - hosts: all
   roles:
