@@ -5,7 +5,22 @@
   - role: osxc.packages
     brew_taps:
     - caskroom/fonts
+    - homebrew/dupes
+    - homebrew/versions
+#    - homebrew/homebrew-php
     brew_packages:
+    - php53
+    - php54
+    - php55
+    - php56
+    - php53-xdebug
+#    - php54-xdebug
+#    - php55-xdebug
+#    - php56-xdebug
+    - brew-php-switcher
+# https://github.com/philcook/brew-php-switcher
+# Syntax: brew-php-switcher 54 for php 5.4
+    - php-code-sniffer
     - p7zip
     - git
     - zsh
@@ -18,15 +33,22 @@
     - watch
     - wget
     cask_packages:
+    - java
     - font-inconsolata-for-powerline
+    - filezilla
     - iterm2
     - macvim
     - firefox
     - google-chrome
     - google-hangouts
-    - phpstorm
+    - jdiskreport
+    - netbeans-php #didn’t work
+    - python
+    - pycharm-ce
+    - phpstorm  
     - mysqlworkbench
     - sublime-text
     - vagrant
+    - vagrant-manager
     - virtualbox
     - textmate
