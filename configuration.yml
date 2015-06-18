@@ -3,12 +3,36 @@
 - hosts: all
   sudo: yes
   tasks:
+  # - name: ensure apache is running (and enable it at boot)
+  #   service: name=httpd state=started enabled=yes
   - name: Set atla.local in hosts
     lineinfile: dest=/etc/hosts line="127.0.0.1 atla.local"
   - name: Set atla.dev in hosts
     lineinfile: dest=/etc/hosts line="10.33.36.10 atla.dev"
+  - name: create web server directories
+    file: path=/var/www state=directory mode=0755
+    file: path=/var/www/atla state=directory mode=0755
+    file: path=/var/www/atla/www state=directory mode=0755
   - name: Enable vhosts in Apache
     replace: dest=/etc/apache2/httpd.conf regexp='^.*httpd-vhosts.conf.*$' replace='Include /private/etc/apache2/extra/httpd-vhosts.conf'
+  - name: Configure vhosts
+    template: src=templates/httpd-vhosts.j2 dest=/etc/apache2/extra/httpd-vhosts.conf owner=root group=wheel mode=0644
+    # notify:
+    # - restart apache
+  - name: Install MySQLdb
+    pip: name=MySQL-python
+  - name: Create local database for Nova
+    mysql_db: name=nova state=present
+  - name: Create local database user for Nova
+    mysql_user: name=nova password=nova123 priv=nova.*:ALL state=present
+
+  # - name: Configure MySQL
+  #   template: src=templates/my.j2 dest=/etc/my.cnf owner=root group=wheel mode=0644
+
+
+  # handlers:
+  #   - name: restart apache
+  #     service: name=httpd state=restarted
 
 - hosts: all
   roles:
