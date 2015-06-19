@@ -1,38 +1,88 @@
 ---
 # Configure your freshly installed software
 - hosts: all
+  sudo: no
+  tasks:
+  - name: Ensure we are working with PHP 5.4 by default
+    shell: brew-php-switcher 54
+# Configure your freshly installed software
+- hosts: all
   sudo: yes
   tasks:
-  # - name: ensure apache is running (and enable it at boot)
-  #   service: name=httpd state=started enabled=yes
   - name: Set atla.local in hosts
     lineinfile: dest=/etc/hosts line="127.0.0.1 atla.local"
   - name: Set atla.dev in hosts
     lineinfile: dest=/etc/hosts line="10.33.36.10 atla.dev"
-  - name: create web server directories
+  - name: create /var/www
     file: path=/var/www state=directory mode=0755
-    file: path=/var/www/atla state=directory mode=0755
-    file: path=/var/www/atla/www state=directory mode=0755
-  - name: Enable vhosts in Apache
-    replace: dest=/etc/apache2/httpd.conf regexp='^.*httpd-vhosts.conf.*$' replace='Include /private/etc/apache2/extra/httpd-vhosts.conf'
+  - name: create local web server directories
+    file: path=/var/www/atla state=directory owner=_www group=_www mode=0755
+    file: path=/var/www/atla/www state=directory owner=_www group=_www mode=0755
+  - name: create vagrant web server directories
+    file: path=/var/www/atla-vagrant state=directory owner=_www group=_www mode=0755
+    file: path=/var/www/atla-vagrant/www state=directory owner=_www group=_www mode=0755
+  # - name: Enable vhosts in Apache
+  #   replace: dest=/etc/apache2/httpd.conf regexp='^.*httpd-vhosts.conf.*$' replace='Include /private/etc/apache2/extra/httpd-vhosts.conf'
+  - name: Edit Apache settings
+    template: src=templates/httpd.j2 dest=/etc/apache2/httpd.conf owner=root group=wheel mode=0644
   - name: Configure vhosts
     template: src=templates/httpd-vhosts.j2 dest=/etc/apache2/extra/httpd-vhosts.conf owner=root group=wheel mode=0644
-    # notify:
-    # - restart apache
+  # - name: Back up php.ini
+  #   copy: src=/usr/local/etc/php/5.4/php.ini dest=/usr/local/etc/php/5.4/php.bak
+  - name: Prep php.ini
+    template: src=templates/php.ini.j2 dest=/usr/local/etc/php/5.4/php.ini owner=root group=wheel mode=0644
+    notify:
+    - restart apache
+  - name: Configure MySQL
+    template: src=templates/my.j2 dest=/etc/my.cnf owner=root group=wheel mode=0644
+    notify:
+    - restart mysql
   - name: Install MySQLdb
     pip: name=MySQL-python
   - name: Create local database for Nova
     mysql_db: name=nova state=present
   - name: Create local database user for Nova
     mysql_user: name=nova password=nova123 priv=nova.*:ALL state=present
+  - name: Clone the Nova repo from Github
+    #Note that the keyfile must already be paired in github
+    git: repo=git@github.com:amethelias/Nova.git dest=/var/www/temp accept_hostkey=yes
+  - name: Copy repo to the vagrant web server
+    synchronize: src=/var/www/temp/ dest=/var/www/atla-vagrant/
+  - name: Copy repo to the local web server
+    synchronize: src=/var/www/temp/ dest=/var/www/atla/
+  - name: Copy settings.php
+    template: src=templates/settings.php.j2 dest=/var/www/atla/www/sites/default/settings.php owner=_www group=_www mode=0644
+  - name: Install composer
+    shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin creates=/usr/local/bin/composer
+    tags: Composer
+  - name: rename composer.phar to composer
+    shell: mv /usr/local/bin/composer.phar /usr/local/bin/composer creates=/usr/local/bin/composer
+    tags: composer
+  - name: Make composer executable
+    file: path=/usr/local/bin/composer mode=a+x state=file
+    tags: composer
+  - name: Install Drush globally
+    shell: composer global require drush/drush:7.*
+  - name: Copy bash_profile
+    template: src=templates/bash_profile.j2 dest=~/.bashprofile
+    notify:
+    - reload bash_profile
 
-  # - name: Configure MySQL
-  #   template: src=templates/my.j2 dest=/etc/my.cnf owner=root group=wheel mode=0644
 
 
-  # handlers:
-  #   - name: restart apache
-  #     service: name=httpd state=restarted
+  # - name: Install local copy of Nova
+  #   command: drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+  # - name: Rebuild drush registry
+  #   command: drush --root=/var/www/atla/www rr
+
+
+  handlers:
+    - name: restart apache
+      shell: apachectl -k restart
+    - name: restart mysql
+      shell: mysql.server restart
+    - name: reload bash_profile
+      shell: source ~/.bashprofile
 
 - hosts: all
   roles:

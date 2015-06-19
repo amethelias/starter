@@ -1,0 +1,23 @@
+# set prompt: ``username:/directory $ ''
+PS1="[\u:\w] " 
+case `id -u` in
+      0) PS1="${PS1}# ";;
+      *) PS1="${PS1}$ ";;
+esac
+
+alias ll="ls -lahG"
+alias su="sudo su"
+alias dircount="tree | tail -1"
+alias myup="sudo /usr/local/mysql/support-files/mysql.server start"
+alias mydown="sudo /usr/local/mysql/support-files/mysql.server stop"
+alias atladir="cd /var/www/atla/www"
+alias atlainstall="drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin; drush rr"
+alias cronme="drush cron; drush cron; drush cron; drush queue-list"
+
+if [ -f ~/.git-completion.bash ]; then
+  source ~/.git-completion.bash
+fi
+
+PATH="$HOME/.composer/vendor/bin:$PATH"
+
+# alias codercs='phpcs --standard=~/.drush/coder/coder_sniffer/Drupal/ruleset.xml --extensions=php,module,inc,install,test,profile,theme,css,js,txt,info'
