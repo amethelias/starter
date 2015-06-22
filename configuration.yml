@@ -14,25 +14,27 @@
       - .bash_login
       - .zshenv
   - name: Set up bash_profile
-    copy: src=dotfiles/bash_profile dest=/Users/{{ ansible_user_id }}/.bash_profile backup=yes
+    copy: src=dotfiles/bash_profile dest=/Users/{{ ansible_ssh_user }}/.bash_profile backup=yes
   - name: Refresh bash_profile
     shell: source ~/.bash_profile
 # Configure your freshly installed software
 - hosts: all
   sudo: yes
   tasks:
+  - name: Add local user to _www group
+    shell: dseditgroup -o edit -a {{ ansible_ssh_user }} -t user _www
   - name: Set atla.local in hosts
     lineinfile: dest=/etc/hosts line="127.0.0.1 atla.local"
   - name: Set atla.dev in hosts
     lineinfile: dest=/etc/hosts line="10.33.36.10 atla.dev"
   - name: create /var/www
-    file: path=/var/www state=directory mode=0755
+    file: path=/var/www state=directory mode=0775
   - name: create local web server directories
-    file: path=/var/www/atla state=directory owner=_www group=_www mode=0755
-    file: path=/var/www/atla/www state=directory owner=_www group=_www mode=0755
+    file: path=/var/www/atla state=directory owner=_www group=_www mode=0775
+    file: path=/var/www/atla/www state=directory owner=_www group=_www mode=0775
   - name: create vagrant web server directories
-    file: path=/var/www/atla-vagrant state=directory owner=_www group=_www mode=0755
-    file: path=/var/www/atla-vagrant/www state=directory owner=_www group=_www mode=0755
+    file: path=/var/www/atla-vagrant state=directory owner=_www group=_www mode=0775
+    file: path=/var/www/atla-vagrant/www state=directory owner=_www group=_www mode=0775
   # - name: Enable vhosts in Apache
   #   replace: dest=/etc/apache2/httpd.conf regexp='^.*httpd-vhosts.conf.*$' replace='Include /private/etc/apache2/extra/httpd-vhosts.conf'
   - name: Edit Apache settings
@@ -63,9 +65,11 @@
   - name: Copy repo to the local web server
     synchronize: src=/var/www/temp/ dest=/var/www/atla/
   - name: Ensure that the apache worker still owns all files
-    file: path=/var/www/atla state=directory owner=_www group=_www mode=0755 recurse=yes
+    file: path=/var/www/atla state=directory owner=_www group=_www mode=0775 recurse=yes
   - name: Open up permissions on sites/default
     file: path=/var/www/atla/www/sites/default state=directory owner=_www group=_www mode=0777 recurse=yes
+  - name: Open up permissions on sites/all
+    file: path=/var/www/atla/www/sites/all state=directory owner=_www group=_www mode=0777 recurse=yes
   - name: Copy settings.php
     template: src=templates/settings.php.j2 dest=/var/www/atla/www/sites/default/settings.php owner=_www group=_www mode=0644
   - name: Install composer
@@ -81,11 +85,19 @@
     sudo: no
     shell: composer global require drush/drush:7.*
   - name: Install composer dependencies for Nova
-    command: composer install -d /var/www/atla -n
-  - name: Install local copy of Nova
-    command: drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+    shell: composer install -d /var/www/atla -n
+  # - name: Install local copy of Nova
+  #   sudo: no
+  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+  - name: Update composer
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
+  - name: Install Drush registry rebuild
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl registry_rebuild
   - name: Rebuild drush registry
-    command: drush --root=/var/www/atla/www rr
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www rr
   handlers:
     - name: restart apache
       shell: apachectl -k restart

@@ -9,7 +9,7 @@ $databases = array (
       'username' => 'nova',
       'password' => 'nova123',
       'driver' => 'mysql',
-      'host' => 'localhost',
+      'host' => '127.0.0.1',
     ),
   ),
 );
@@ -18,14 +18,14 @@ $conf = array (
   'atla_elasticsearch_index_name' => 'atla_my_own_index',
   'elasticsearch_connector_get_default_connector' => 'atla_elasticsearch',
   'atla_pdf_path' => DRUPAL_ROOT . '/sites/default/files' ,
-  // 'cache_backends' => 
-  // array (
-  //   0 => 'sites/all/modules/contrib/memcache/memcache.inc',
-  // ),
-  // 'cache_class_cache_form' => 'DrupalDatabaseCache',
-  // 'cache_default_class' => 'MemCacheDrupal',
-  // 'memcache_key_prefix' => 'atla_drupal_',
-  // 'atla_records_path' => '/var/www/atla/www/data/',
+   'cache_backends' => 
+   array (
+     0 => 'sites/all/modules/contrib/memcache/memcache.inc',
+   ),
+   'cache_class_cache_form' => 'DrupalDatabaseCache',
+   'cache_default_class' => 'MemCacheDrupal',
+   'memcache_key_prefix' => 'atla_drupal_',
+   'atla_records_path' => '/var/www/atla/www/data/',
 );
 
 $drupal_hash_salt = '1b2af57402eafe41189ea5d76fee58b5a1b6f2684fec6be8799688d6292cafc1';
