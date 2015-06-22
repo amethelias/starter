@@ -72,7 +72,12 @@
     tags: composer
   - name: Make composer executable
     file: path=/usr/local/bin/composer mode=a+x state=file
-    tags: composer    
+    tags: composer
+  - name: Install Drush globally
+    sudo: no
+    shell: composer global require drush/drush:7.*
+  - name: Install composer dependencies for Nova
+    command: composer install -d /var/www/atla -n
   handlers:
     - name: restart apache
       shell: apachectl -k restart
@@ -82,22 +87,10 @@
 # - hosts: all
 #   sudo: no
 #   tasks:
-#   - name: Install composer
-#     shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=~/.composer creates=~/.composer/composer
-#     tags: Composer
-#   - name: rename composer.phar to composer
-#     shell: mv ~/.composer/composer.phar ~/.composer/composer creates=~/.composer/composer
-#     tags: composer
-#   - name: Make composer executable
-#     file: path=~/.composer/composer mode=a+x state=file
-#     tags: composer
   # - name: Install Drush globally
   #   shell: composer global require drush/drush:7.*
-  # - name: Run composer update
-  #   shell: composer global update
-
-
-
+  # - name: Install composer dependencies for Nova
+  #   command: composer install -d /var/www/atla -n
   # - name: Install local copy of Nova
   #   command: drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
   # - name: Rebuild drush registry
