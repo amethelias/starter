@@ -5,6 +5,18 @@
   tasks:
   - name: Ensure we are working with PHP 5.4 by default
     shell: brew-php-switcher 54
+  - name: create ~/.composer
+    file: path=~/.composer state=directory mode=0755
+  - name: Touch dot files
+    file: path=~/{{ item }} state=touch
+    with_items: 
+      - .bash_profile
+      - .bash_login
+      - .zshenv
+  - name: Set up bash_profile
+    copy: src=dotfiles/bash_profile dest=/Users/{{ ansible_user_id }}/.bash_profile backup=yes
+  - name: Refresh bash_profile
+    shell: source ~/.bash_profile
 # Configure your freshly installed software
 - hosts: all
   sudo: yes
@@ -60,13 +72,29 @@
     tags: composer
   - name: Make composer executable
     file: path=/usr/local/bin/composer mode=a+x state=file
-    tags: composer
-  - name: Install Drush globally
-    shell: composer global require drush/drush:7.*
-  - name: Copy bash_profile
-    template: src=templates/bash_profile.j2 dest=~/.bashprofile
-    notify:
-    - reload bash_profile
+    tags: composer    
+  handlers:
+    - name: restart apache
+      shell: apachectl -k restart
+    - name: restart mysql
+      shell: mysql.server restart
+# # Return to non-sudo tasks
+# - hosts: all
+#   sudo: no
+#   tasks:
+#   - name: Install composer
+#     shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=~/.composer creates=~/.composer/composer
+#     tags: Composer
+#   - name: rename composer.phar to composer
+#     shell: mv ~/.composer/composer.phar ~/.composer/composer creates=~/.composer/composer
+#     tags: composer
+#   - name: Make composer executable
+#     file: path=~/.composer/composer mode=a+x state=file
+#     tags: composer
+  # - name: Install Drush globally
+  #   shell: composer global require drush/drush:7.*
+  # - name: Run composer update
+  #   shell: composer global update
 
 
 
@@ -76,13 +104,7 @@
   #   command: drush --root=/var/www/atla/www rr
 
 
-  handlers:
-    - name: restart apache
-      shell: apachectl -k restart
-    - name: restart mysql
-      shell: mysql.server restart
-    - name: reload bash_profile
-      shell: source ~/.bashprofile
+
 
 - hosts: all
   roles:
