@@ -35,16 +35,18 @@
   - name: create vagrant web server directories
     file: path=/var/www/atla-vagrant state=directory owner=_www group=_www mode=0775
     file: path=/var/www/atla-vagrant/www state=directory owner=_www group=_www mode=0775
-  # - name: Enable vhosts in Apache
-  #   replace: dest=/etc/apache2/httpd.conf regexp='^.*httpd-vhosts.conf.*$' replace='Include /private/etc/apache2/extra/httpd-vhosts.conf'
+  - name: Set up .gitconfig
+    sudo: no
+    template: src=templates/gitconfig.j2 dest=~/.gitconfig
+  - name: Set up .gitignore
+    sudo: no
+    template: src=templates/gitignore.j2 dest=~/.gitignore
   - name: Edit Apache settings
     template: src=templates/httpd.j2 dest=/etc/apache2/httpd.conf owner=root group=wheel mode=0644
   - name: Configure vhosts
     template: src=templates/httpd-vhosts.j2 dest=/etc/apache2/extra/httpd-vhosts.conf owner=root group=wheel mode=0644
-  # - name: Back up php.ini
-  #   copy: src=/usr/local/etc/php/5.4/php.ini dest=/usr/local/etc/php/5.4/php.bak
   - name: Prep php.ini
-    template: src=templates/php.ini.j2 dest=/usr/local/etc/php/5.4/php.ini owner=root group=wheel mode=0644
+    template: src=templates/php.ini.j2 dest=/usr/local/etc/php/5.4/php.ini owner=root group=wheel mode=0644 backup=yes
     notify:
     - restart apache
   - name: Configure MySQL
@@ -84,8 +86,16 @@
   - name: Install Drush globally
     sudo: no
     shell: composer global require drush/drush:7.*
+  - name: Install coder
+    sudo: no
+    shell: composer global require drupal/coder
+  - name: Make the phpcs and phpcbf commands globally available
+    shell: sudo ln -sf ~/.composer/vendor/bin/phpcs /usr/local/bin; sudo ln -sf ~/.composer/vendor/bin/phpcbf /usr/local/bin
   - name: Install composer dependencies for Nova
     shell: composer install -d /var/www/atla -n
+  - name: Register the Drupal and DrupalPractice Standard with PHPCS
+    sudo: no
+    shell: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer
   # - name: Install local copy of Nova
   #   sudo: no
   #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
@@ -98,12 +108,9 @@
   - name: Rebuild drush registry
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www rr
-  - name: Install Drush coder
-    sudo: no
-    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl coder-7.x-2.5; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder_review -y;  ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder -y; 
   - name: Install Drush code quality standards
     sudo: no
-    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dcq --force
   handlers:
     - name: restart apache
       shell: apachectl -k restart
