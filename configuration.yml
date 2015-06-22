@@ -89,15 +89,21 @@
   # - name: Install local copy of Nova
   #   sudo: no
   #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
-  - name: Update composer
-    sudo: no
-    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
+  # - name: Update composer
+  #   sudo: no
+  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
   - name: Install Drush registry rebuild
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl registry_rebuild
   - name: Rebuild drush registry
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www rr
+  - name: Install Drush coder
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl coder-7.x-2.5; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder_review -y;  ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder -y; 
+  - name: Install Drush code quality standards
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y
   handlers:
     - name: restart apache
       shell: apachectl -k restart
