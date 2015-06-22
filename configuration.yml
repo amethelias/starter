@@ -62,6 +62,10 @@
     synchronize: src=/var/www/temp/ dest=/var/www/atla-vagrant/
   - name: Copy repo to the local web server
     synchronize: src=/var/www/temp/ dest=/var/www/atla/
+  - name: Ensure that the apache worker still owns all files
+    file: path=/var/www/atla state=directory owner=_www group=_www mode=0755 recurse=yes
+  - name: Open up permissions on sites/default
+    file: path=/var/www/atla/www/sites/default state=directory owner=_www group=_www mode=0777 recurse=yes
   - name: Copy settings.php
     template: src=templates/settings.php.j2 dest=/var/www/atla/www/sites/default/settings.php owner=_www group=_www mode=0644
   - name: Install composer
@@ -78,26 +82,15 @@
     shell: composer global require drush/drush:7.*
   - name: Install composer dependencies for Nova
     command: composer install -d /var/www/atla -n
+  - name: Install local copy of Nova
+    command: drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+  - name: Rebuild drush registry
+    command: drush --root=/var/www/atla/www rr
   handlers:
     - name: restart apache
       shell: apachectl -k restart
     - name: restart mysql
       shell: mysql.server restart
-# # Return to non-sudo tasks
-# - hosts: all
-#   sudo: no
-#   tasks:
-  # - name: Install Drush globally
-  #   shell: composer global require drush/drush:7.*
-  # - name: Install composer dependencies for Nova
-  #   command: composer install -d /var/www/atla -n
-  # - name: Install local copy of Nova
-  #   command: drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
-  # - name: Rebuild drush registry
-  #   command: drush --root=/var/www/atla/www rr
-
-
-
 
 - hosts: all
   roles:
