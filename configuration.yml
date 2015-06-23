@@ -51,6 +51,7 @@
     - restart apache
   - name: Configure MySQL
     template: src=templates/my.j2 dest=/etc/my.cnf owner=root group=wheel mode=0644
+    template: src=templates/my.j2 dest=/usr/local/etc/my.cnf owner=root group=wheel mode=0644
     notify:
     - restart mysql
   - name: Install MySQLdb
@@ -62,8 +63,8 @@
   - name: Clone the Nova repo from Github
     #Note that the keyfile must already be paired in github
     git: repo=git@github.com:amethelias/Nova.git dest=/var/www/temp accept_hostkey=yes
-  - name: Copy repo to the vagrant web server
-    synchronize: src=/var/www/temp/ dest=/var/www/atla-vagrant/
+  # - name: Copy repo to the vagrant web server
+  #   synchronize: src=/var/www/temp/ dest=/var/www/atla-vagrant/
   - name: Copy repo to the local web server
     synchronize: src=/var/www/temp/ dest=/var/www/atla/
   - name: Ensure that the apache worker still owns all files
@@ -111,6 +112,10 @@
   - name: Install Drush code quality standards
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl coder-7.x-2.5 -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dcq --force
+  - name: Reset git to head to remove cruft from above installs
+    shell: git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" reset HEAD --hard; git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" clean -fd; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" reset HEAD --hard; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" clean -fd
+  - name: Set memcached to run at startup
+    template: src=templates/memcached.plist.j2 dest=/Library/LaunchDaemons/memcached.plist owner=root group=wheel mode=0644
   - name: Set up Netbeans project
     sudo: no
     shell: mkdir -p ~/NetBeansProjects; cp "ide/NetBeansProjects/Atla Nova" "~/NetBeansProjects/Atla Nova" 
