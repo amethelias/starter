@@ -17,6 +17,24 @@
     copy: src=dotfiles/bash_profile dest=/Users/{{ ansible_ssh_user }}/.bash_profile backup=yes
   - name: Refresh bash_profile
     shell: source ~/.bash_profile
+  - name: Configure brewed Mysql 1
+    shell: unset TMPDIR;
+  - name: Configure brewed Mysql 2
+    shell: mysql.server stop
+  - name: Configure brewed Mysql 3
+    shell: mysql_install_db --verbose --user={{ ansible_ssh_user }} --basedir="$(brew --prefix mysql)" --datadir=/usr/local/var/mysql --tmpdir=/tmp
+  - name: Configure brewed Mysql 4
+    shell: mysql.server start
+  - name: Create LaunchAgents dir
+    file: path=~/Library/LaunchAgents state=directory
+  - name: Symlink the mysql plist
+    file: src=/usr/local/opt/mysql/homebrew.mxcl.mysql.plist dest=~/Library/LaunchAgents/homebrew.mxcl.mysql.plist state=link
+  - name: Initialize MySQL plist
+    shell: launchctl load ~/Library/LaunchAgents/homebrew.mxcl.mysql.plist
+  - name: Symlink the memcached plist
+    file: src=/usr/local/opt/memcached/homebrew.mxcl.memcached.plist dest=~/Library/LaunchAgents/homebrew.mxcl.memcached.plist state=link
+  - name: Initialize memcached plist
+    shell: launchctl load ~/Library/LaunchAgents/homebrew.mxcl.memcached.plist
 # Configure your freshly installed software
 - hosts: all
   sudo: yes
@@ -97,12 +115,12 @@
   - name: Register the Drupal and DrupalPractice Standard with PHPCS
     sudo: no
     shell: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer
-  - name: Install local copy of Nova
-    sudo: no
-    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
-  - name: Update composer
-    sudo: no
-    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
+  # - name: Install local copy of Nova
+  #   sudo: no
+  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+  # - name: Update composer
+  #   sudo: no
+  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
   - name: Install Drush registry rebuild
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl registry_rebuild
@@ -119,8 +137,6 @@
     file: src=/Users/{{ ansible_ssh_user }}/.composer/vendor/drupal/coder/coder_sniffer/Drupal dest=/usr/local/Cellar/php-code-sniffer/2.3.2/CodeSniffer/Standards/Drupal owner={{ ansible_ssh_user }} group=wheel state=link
   - name: Reset git to head to remove cruft from above installs
     shell: git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" reset HEAD --hard; git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" clean -fd; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" reset HEAD --hard; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" clean -fd
-  - name: Set memcached to run at startup
-    template: src=templates/memcached.plist.j2 dest=/Library/LaunchDaemons/memcached.plist owner=root group=wheel mode=0644
   - name: Set up Netbeans project
     sudo: no
     copy: src="ide/NetBeansProjects/Atla Nova" dest=/Users/{{ ansible_ssh_user }}/NetBeansProjects/ force=yes
