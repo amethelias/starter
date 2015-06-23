@@ -112,16 +112,21 @@
   - name: Install Drush code quality standards
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl coder-7.x-2.5 -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dcq --force
+  - name: Register Drupal coding standard with PHPCS 1
+    sudo: no
+    file: src=~/.composer/vendor/drupal/coder/coder_sniffer/Drupal dest=~/.composer/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/Drupal owner={{ ansible_ssh_user }} state=link
+  - name: Register Drupal coding standard with PHPCS 2
+    file: src=/Users/{{ ansible_ssh_user }}/.composer/vendor/drupal/coder/coder_sniffer/Drupal dest=/usr/local/Cellar/php-code-sniffer/2.3.2/CodeSniffer/Standards/Drupal owner={{ ansible_ssh_user }} group=wheel state=link
   - name: Reset git to head to remove cruft from above installs
     shell: git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" reset HEAD --hard; git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" clean -fd; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" reset HEAD --hard; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" clean -fd
   - name: Set memcached to run at startup
     template: src=templates/memcached.plist.j2 dest=/Library/LaunchDaemons/memcached.plist owner=root group=wheel mode=0644
   - name: Set up Netbeans project
     sudo: no
-    shell: mkdir -p ~/NetBeansProjects; cp "ide/NetBeansProjects/Atla Nova" "~/NetBeansProjects/Atla Nova" 
+    copy: src="ide/NetBeansProjects/Atla Nova" dest=/Users/{{ ansible_ssh_user }}/NetBeansProjects/ force=yes
   - name: Set up PhpStorm project
     sudo: no
-    shell: cp ide/phpstorm /var/www/atla/www/.idea
+    copy: src=ide/.idea dest=/var/www/atla/www/ force=yes
   handlers:
     - name: restart apache
       shell: apachectl -k restart
