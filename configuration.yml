@@ -97,12 +97,12 @@
   - name: Register the Drupal and DrupalPractice Standard with PHPCS
     sudo: no
     shell: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer
-  # - name: Install local copy of Nova
-  #   sudo: no
-  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
-  # - name: Update composer
-  #   sudo: no
-  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
+  - name: Install local copy of Nova
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+  - name: Update composer
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
   - name: Install Drush registry rebuild
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl registry_rebuild
