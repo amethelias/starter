@@ -1,3 +1,0 @@
----
-# Directory where Composer installs user files
-dcs_comp_user_dir: /home/vagrant/.composer

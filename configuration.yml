@@ -110,7 +110,13 @@
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www rr
   - name: Install Drush code quality standards
     sudo: no
-    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dcq --force
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl coder-7.x-2.5 -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dcq --force
+  - name: Set up Netbeans project
+    sudo: no
+    shell: mkdir -p ~/NetBeansProjects; cp "ide/NetBeansProjects/Atla Nova" "~/NetBeansProjects/Atla Nova" 
+  - name: Set up PhpStorm project
+    sudo: no
+    shell: cp ide/phpstorm /var/www/atla/www/.idea
   handlers:
     - name: restart apache
       shell: apachectl -k restart
