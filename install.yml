@@ -5,7 +5,26 @@
   - role: osxc.packages
     brew_taps:
     - caskroom/fonts
+    - homebrew/dupes
+    - homebrew/versions
     brew_packages:
+    - memcached
+    - php53
+    - php54
+    - php55
+    tasks:
+    - name: Link php
+      shell: brew link php54
+    brew_packages:
+    - php54-xdebug
+    - php54-memcached
+    - php54-apc
+    - brew-php-switcher
+    - bash-completion
+# https://github.com/philcook/brew-php-switcher
+# Syntax: brew-php-switcher 54 for php 5.4
+    - php-code-sniffer
+    - p7zip
     - git
     - zsh
     - vim
@@ -13,7 +32,25 @@
     - ctags
     - reattach-to-user-namespace
     - tmux
+    - mysql
+    - watch
+    - wget
     cask_packages:
+    - java
     - font-inconsolata-for-powerline
+    - filezilla
     - iterm2
-    - macvim
+    - firefox
+    - google-chrome
+    - google-hangouts
+    - jdiskreport
+    - netbeans-php
+    - python
+    - pycharm-ce
+    - phpstorm
+    - mysqlworkbench
+    - sublime-text
+    - vagrant
+    - vagrant-manager
+    - virtualbox
+    - textmate

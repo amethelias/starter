@@ -1,0 +1,11 @@
+<VirtualHost *:80>
+    ServerName atla.local
+    ServerAlias www.atla.local
+    DocumentRoot /var/www/atla/www
+	<Directory /var/www/atla/www>
+		Options FollowSymLinks
+		AllowOverride All
+		RewriteEngine On
+    Require all granted
+	</Directory>
+</VirtualHost>

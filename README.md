@@ -1,10 +1,13 @@
-starter
-=======
+## ATLA Usage
+The original readme is preserved below for reference. For ATLA usage follow the following instructions:
 
-An osxc playbook, ready to be forked !
-
-
-> **Warning:** This version of osxc is not compatible with the old one (called now legacy), you'll have to copy some old roles locally in order to make a smooth transition. On the other side, you can still use legacy and we will continue to accept your pull requests on legacy.
+1. Be sure to have the XCode Command-Line tools installed: `xcode-select --install`
+2. Easy_install pip, and then pip install Ansible: `sudo easy_install pip; sudo pip install ansible`
+3. If you plan to use PHPStorm you will need to install the Mac Java installable found here: https://support.apple.com/kb/DL1572?locale=en_US
+4. In order to complete the portion of the install that clones a private repo you will need to have an RSA key set up with github on this machine. Do so now (https://help.github.com/articles/generating-ssh-keys/). If you set a keyphrase, allow Mac keychain to remember it during the test in the linked instructions.
+5. Clone the project on your machine: `git clone https://github.com/amethelias/starter.git ~/src/osxc; cd ~/src/osxc`
+6. Last, run the shell script to perform the install: `./ansible-provision.sh`
+> **Additional Note:** Expect that this will ask twice for the sudo password, once to run and once for ansible.
 
 ## Introduction
 

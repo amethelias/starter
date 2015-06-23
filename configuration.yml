@@ -1,28 +1,137 @@
 ---
 # Configure your freshly installed software
 - hosts: all
-  roles:
-  - role: osxc.repository
-    clone_url: https://github.com/robbyrussell/oh-my-zsh.git
-    dest: /Users/{{ ansible_user_id }}/.oh-my-zsh
-  - role: osxc.repository
-    clone_url: https://github.com/square/maximum-awesome.git
-    dest: /Users/{{ ansible_user_id }}/.vim
-    links:
-    - src: vimrc
-      dest: /Users/{{ ansible_user_id }}/.vimrc
-    - src: vimrc.bundles
-      dest: /Users/{{ ansible_user_id }}/.vimrc.bundles
-    - src: tmux.conf
-      dest: /Users/{{ ansible_user_id }}/.tmux.conf
-  - role: osxc.repository
-    clone_url: https://github.com/gmarik/vundle.git
-    dest: /Users/{{ ansible_user_id }}/.vim/bundle/vundle
-  post_tasks:
-  - copy: src=dotfiles/zshrc dest=/Users/{{ ansible_user_id }}/.zshrc backup=yes
-  - copy: src=dotfiles/vimrc.local dest=/Users/{{ ansible_user_id }}/.vimrc.local backup=yes
-  - copy: src=dotfiles/vimrc.bundles.local dest=/Users/{{ ansible_user_id }}/.vimrc.bundles.local backup=yes
-  - copy: src=dotfiles/tmux.conf.local dest=/Users/{{ ansible_user_id }}/.tmux.conf.local backup=yes
+  sudo: no
+  tasks:
+  - name: Ensure we are working with PHP 5.4 by default
+    shell: brew-php-switcher 54
+  - name: create ~/.composer
+    file: path=~/.composer state=directory mode=0755
+  - name: Touch dot files
+    file: path=~/{{ item }} state=touch
+    with_items: 
+      - .bash_profile
+      - .bash_login
+      - .zshenv
+  - name: Set up bash_profile
+    copy: src=dotfiles/bash_profile dest=/Users/{{ ansible_ssh_user }}/.bash_profile backup=yes
+  - name: Refresh bash_profile
+    shell: source ~/.bash_profile
+# Configure your freshly installed software
+- hosts: all
+  sudo: yes
+  tasks:
+  - name: Add local user to _www group
+    shell: dseditgroup -o edit -a {{ ansible_ssh_user }} -t user _www
+  - name: Set atla.local in hosts
+    lineinfile: dest=/etc/hosts line="127.0.0.1 atla.local"
+  - name: Set atla.dev in hosts
+    lineinfile: dest=/etc/hosts line="10.33.36.10 atla.dev"
+  - name: create /var/www
+    file: path=/var/www state=directory mode=0775
+  - name: create local web server directories
+    file: path=/var/www/atla state=directory owner=_www group=_www mode=0775
+    file: path=/var/www/atla/www state=directory owner=_www group=_www mode=0775
+  - name: create vagrant web server directories
+    file: path=/var/www/atla-vagrant state=directory owner={{ ansible_ssh_user }} group=_www mode=0775
+    file: path=/var/www/atla-vagrant/www state=directory owner={{ ansible_ssh_user }} group=_www mode=0775
+  - name: Set up .gitconfig
+    sudo: no
+    template: src=templates/gitconfig.j2 dest=~/.gitconfig
+  - name: Set up .gitignore
+    sudo: no
+    template: src=templates/gitignore.j2 dest=~/.gitignore
+  - name: Edit Apache settings
+    template: src=templates/httpd.j2 dest=/etc/apache2/httpd.conf owner=root group=wheel mode=0644
+  - name: Configure vhosts
+    template: src=templates/httpd-vhosts.j2 dest=/etc/apache2/extra/httpd-vhosts.conf owner=root group=wheel mode=0644
+  - name: Prep php.ini
+    template: src=templates/php.ini.j2 dest=/usr/local/etc/php/5.4/php.ini owner=root group=wheel mode=0644 backup=yes
+    notify:
+    - restart apache
+  - name: Configure MySQL
+    template: src=templates/my.j2 dest=/etc/my.cnf owner=root group=wheel mode=0644
+    template: src=templates/my.j2 dest=/usr/local/etc/my.cnf owner=root group=wheel mode=0644
+    notify:
+    - restart mysql
+  - name: Install MySQLdb
+    pip: name=MySQL-python
+  - name: Create local database for Nova
+    mysql_db: name=nova state=present
+  - name: Create local database user for Nova
+    mysql_user: name=nova password=nova123 priv=nova.*:ALL state=present
+  - name: Clone the Nova repo from Github
+    #Note that the keyfile must already be paired in github
+    git: repo=git@github.com:amethelias/Nova.git dest=/var/www/temp accept_hostkey=yes
+  # - name: Copy repo to the vagrant web server
+  #   synchronize: src=/var/www/temp/ dest=/var/www/atla-vagrant/
+  - name: Copy repo to the local web server
+    synchronize: src=/var/www/temp/ dest=/var/www/atla/
+  - name: Ensure that the apache worker still owns all files
+    file: path=/var/www/atla state=directory owner=_www group=_www mode=0775 recurse=yes
+  - name: Open up permissions on sites/default
+    file: path=/var/www/atla/www/sites/default state=directory owner=_www group=_www mode=0777 recurse=yes
+  - name: Open up permissions on sites/all
+    file: path=/var/www/atla/www/sites/all state=directory owner=_www group=_www mode=0777 recurse=yes
+  - name: Copy settings.php
+    template: src=templates/settings.php.j2 dest=/var/www/atla/www/sites/default/settings.php owner=_www group=_www mode=0644
+  - name: Install composer
+    shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin creates=/usr/local/bin/composer
+    tags: Composer
+  - name: rename composer.phar to composer
+    shell: mv /usr/local/bin/composer.phar /usr/local/bin/composer creates=/usr/local/bin/composer
+    tags: composer
+  - name: Make composer executable
+    file: path=/usr/local/bin/composer mode=a+x state=file
+    tags: composer
+  - name: Install Drush globally
+    sudo: no
+    shell: composer global require drush/drush:7.*
+  - name: Install coder
+    sudo: no
+    shell: composer global require drupal/coder
+  - name: Make the phpcs and phpcbf commands globally available
+    shell: sudo ln -sf ~/.composer/vendor/bin/phpcs /usr/local/bin; sudo ln -sf ~/.composer/vendor/bin/phpcbf /usr/local/bin
+  - name: Install composer dependencies for Nova
+    shell: composer install -d /var/www/atla -n
+  - name: Register the Drupal and DrupalPractice Standard with PHPCS
+    sudo: no
+    shell: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer
+  - name: Install local copy of Nova
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+  - name: Update composer
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
+  - name: Install Drush registry rebuild
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl registry_rebuild
+  - name: Rebuild drush registry
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www rr
+  - name: Install Drush code quality standards
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl coder-7.x-2.5 -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en coder -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www en dcq -y; ~/.composer/vendor/bin/drush --root=/var/www/atla/www dcq --force
+  - name: Register Drupal coding standard with PHPCS 1
+    sudo: no
+    file: src=~/.composer/vendor/drupal/coder/coder_sniffer/Drupal dest=~/.composer/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/Drupal owner={{ ansible_ssh_user }} state=link
+  - name: Register Drupal coding standard with PHPCS 2
+    file: src=/Users/{{ ansible_ssh_user }}/.composer/vendor/drupal/coder/coder_sniffer/Drupal dest=/usr/local/Cellar/php-code-sniffer/2.3.2/CodeSniffer/Standards/Drupal owner={{ ansible_ssh_user }} group=wheel state=link
+  - name: Reset git to head to remove cruft from above installs
+    shell: git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" reset HEAD --hard; git --git-dir="/var/www/atla/.git" --work-tree="/var/www/atla/" clean -fd; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" reset HEAD --hard; git --git-dir="/var/www/atla-vagrant/.git" --work-tree="/var/www/atla-vagrant/" clean -fd
+  - name: Set memcached to run at startup
+    template: src=templates/memcached.plist.j2 dest=/Library/LaunchDaemons/memcached.plist owner=root group=wheel mode=0644
+  - name: Set up Netbeans project
+    sudo: no
+    copy: src="ide/NetBeansProjects/Atla Nova" dest=/Users/{{ ansible_ssh_user }}/NetBeansProjects/ force=yes
+  - name: Set up PhpStorm project
+    sudo: no
+    copy: src=ide/.idea dest=/var/www/atla/www/ force=yes
+  handlers:
+    - name: restart apache
+      shell: apachectl -k restart
+    - name: restart mysql
+      shell: mysql.server restart
 
 - hosts: all
   roles:
