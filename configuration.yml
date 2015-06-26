@@ -35,6 +35,10 @@
     file: src=/usr/local/opt/memcached/homebrew.mxcl.memcached.plist dest=~/Library/LaunchAgents/homebrew.mxcl.memcached.plist state=link
   - name: Initialize memcached plist
     shell: launchctl load ~/Library/LaunchAgents/homebrew.mxcl.memcached.plist
+  - name: Symlink the elasticsearch plist
+    file: src=/usr/local/opt/elasticsearch/homebrew.mxcl.elasticsearch.plist dest=~/Library/LaunchAgents/homebrew.mxcl.elasticsearch.plist state=link
+  - name: Initialize elasticsearch plist
+    shell: launchctl load ~/Library/LaunchAgents/homebrew.mxcl.elasticsearch.plist
 # Configure your freshly installed software
 - hosts: all
   sudo: yes
@@ -115,12 +119,12 @@
   - name: Register the Drupal and DrupalPractice Standard with PHPCS
     sudo: no
     shell: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer
-  # - name: Install local copy of Nova
-  #   sudo: no
-  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
-  # - name: Update composer
-  #   sudo: no
-  #   shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
+  - name: Install local copy of Nova
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www site-install atlaprofile --yes --site-name="ATLA" --account-pass=admin
+  - name: Update composer
+    sudo: no
+    shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www composer-manager update
   - name: Install Drush registry rebuild
     sudo: no
     shell: ~/.composer/vendor/bin/drush --root=/var/www/atla/www dl registry_rebuild

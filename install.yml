@@ -21,6 +21,7 @@
     - php54-apc
     - brew-php-switcher
     - bash-completion
+    - elasticsearch
 # https://github.com/philcook/brew-php-switcher
 # Syntax: brew-php-switcher 54 for php 5.4
     - php-code-sniffer
